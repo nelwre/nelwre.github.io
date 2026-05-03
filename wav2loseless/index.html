@@ -41,6 +41,7 @@ body::before {
   z-index: 999;
 }
 
+/* header */
 header { text-align: center; margin-bottom: 52px; }
 
 h1 {
@@ -61,6 +62,7 @@ h1 span { color: var(--text); }
   letter-spacing: 0.1em;
 }
 
+/* card */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -79,6 +81,7 @@ h1 span { color: var(--text); }
   margin-bottom: 16px;
 }
 
+/* dropzone */
 #dropzone {
   border: 1.5px dashed var(--border);
   border-radius: 2px;
@@ -119,6 +122,7 @@ h1 span { color: var(--text); }
 .file-item .fname { color: var(--text); word-break: break-all; }
 .file-item .fsize { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 
+/* options grid */
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -168,6 +172,7 @@ select:focus, select:hover { border-color: var(--accent2); }
 }
 .txt-input:focus { border-color: var(--accent2); }
 
+/* color picker */
 .color-row { display: flex; gap: 8px; align-items: stretch; }
 
 input[type=color] {
@@ -181,10 +186,12 @@ input[type=color] {
   flex-shrink: 0;
 }
 
+/* resolution */
 .res-row { display: flex; gap: 8px; align-items: center; }
 .res-row .txt-input { flex: 1; text-align: center; }
 .res-row .times { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
 
+/* image upload */
 .img-file-input {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -217,8 +224,10 @@ input[type=color] {
   margin-top: 6px;
 }
 
+/* toggle utility */
 .hidden { display: none !important; }
 
+/* note */
 .note {
   font-size: 0.67rem;
   color: var(--muted);
@@ -229,8 +238,22 @@ input[type=color] {
 }
 .note strong { color: #666; }
 
+/* coi banner */
+#coi-banner {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255,95,95,.07);
+  border: 1px solid rgba(255,95,95,.25);
+  border-radius: 2px;
+  padding: 12px 16px;
+  font-size: 0.7rem;
+  color: #ff9f9f;
+  margin-bottom: 14px;
+  line-height: 1.75;
+}
+#coi-banner a { color: var(--accent2); }
 
-
+/* convert btn */
 #convert-btn {
   width: 100%;
   max-width: 640px;
@@ -265,6 +288,7 @@ input[type=color] {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* log */
 #log-card { display: none; }
 
 #log {
@@ -274,15 +298,13 @@ input[type=color] {
   padding: 12px 14px;
   font-size: 0.7rem;
   color: #888;
-  max-height: 280px;
+  max-height: 200px;
   overflow-y: auto;
   line-height: 1.75;
-  word-break: break-all;
 }
 #log .ok   { color: var(--accent); }
 #log .info { color: var(--accent2); }
 #log .err  { color: var(--danger); }
-#log .warn { color: #f0a04a; }
 
 .progress-wrap {
   margin-top: 10px;
@@ -295,6 +317,7 @@ input[type=color] {
 }
 #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .3s; }
 
+/* downloads */
 #downloads { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 
 .dl-item {
@@ -315,6 +338,7 @@ input[type=color] {
 .dl-item .dl-size { color: var(--muted); white-space: nowrap; }
 .dl-item .dl-arrow { font-size: 1.1rem; flex-shrink: 0; }
 
+/* footer */
 footer {
   margin-top: 52px;
   font-size: 0.65rem;
@@ -333,6 +357,13 @@ footer {
   <h1><span>wav →</span> lossless<br>video</h1>
   <p class="subtitle">client-side · ffmpeg.wasm · no server</p>
 </header>
+
+<div id="coi-banner" class="hidden">
+  ⚠ <strong>SharedArrayBuffer unavailable.</strong>
+  FFmpeg.wasm needs it. On GitHub Pages, add
+  <a href="https://github.com/gzuidhof/coi-serviceworker" target="_blank">coi-serviceworker</a>
+  to your repo and include it as the first <code>&lt;script&gt;</code>.
+</div>
 
 <!-- 01 files -->
 <div class="card">
@@ -386,6 +417,7 @@ footer {
     </div>
   </div>
 
+  <!-- solid color — hidden until selected -->
   <div id="color-group" class="opt-group hidden" style="margin-top:14px;">
     <span class="opt-label">background color</span>
     <div class="color-row">
@@ -394,6 +426,7 @@ footer {
     </div>
   </div>
 
+  <!-- image — hidden until selected -->
   <div id="img-group" class="opt-group hidden" style="margin-top:14px;">
     <span class="opt-label">background image</span>
     <input class="img-file-input" type="file" id="img-input" accept="image/*">
@@ -420,12 +453,17 @@ footer {
 
 <footer>made by Claude.</footer>
 
-<!-- ─── ffmpeg.wasm (single-thread — não precisa de SharedArrayBuffer) ── -->
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
-
-<!-- ─── app ───────────────────────────────────────────────────────────── -->
+<!-- 1. coi-serviceworker MUST be first -->
+<script src="https://raw.githubusercontent.com/nelwre/nelwre.github.io/refs/heads/main/wav2loseless/coi-serviceworker.js"></script>
+<!-- 2. ffmpeg.wasm -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
 <script>
 'use strict';
+
+/* ── SharedArrayBuffer check ─────────────────────────────────────── */
+if (typeof SharedArrayBuffer === 'undefined') {
+  document.getElementById('coi-banner').classList.remove('hidden');
+}
 
 /* ── state ───────────────────────────────────────────────────────── */
 let wavFiles    = [];
@@ -442,17 +480,14 @@ function fmtBytes(b) {
 }
 
 function logLine(type, msg) {
-  const card = document.getElementById('log-card');
-  card.style.display = '';
+  document.getElementById('log-card').style.display = '';
   const el  = document.getElementById('log');
   const div = document.createElement('div');
-  div.className = type;
-  const ts = new Date().toLocaleTimeString('en', { hour12: false });
+  div.className   = type;
+  const ts        = new Date().toLocaleTimeString('en', { hour12: false });
   div.textContent = `[${ts}] ${msg}`;
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
-  // também loga no console para facilitar debug
-  console[type === 'err' ? 'error' : 'log'](`[wav2video][${type}] ${msg}`);
 }
 
 function setProgress(pct) {
@@ -477,10 +512,7 @@ function renderFileList() {
 
 /* ── file input ──────────────────────────────────────────────────── */
 function applyFiles(list) {
-  const all = Array.from(list);
-  wavFiles = all.filter(f => /\.wav$/i.test(f.name));
-  const rejected = all.length - wavFiles.length;
-  if (rejected > 0) logLine('warn', `${rejected} arquivo(s) ignorado(s) (não são .wav)`);
+  wavFiles = Array.from(list).filter(f => /\.wav$/i.test(f.name));
   renderFileList();
   updateBtn();
 }
@@ -524,83 +556,42 @@ document.getElementById('img-input').addEventListener('change', function () {
 
 /* ── load ffmpeg ─────────────────────────────────────────────────── */
 async function ensureFFmpeg() {
-  if (ffmpegReady) {
-    logLine('info', 'ffmpeg já carregado, reutilizando.');
-    return;
-  }
+  if (ffmpegReady) return;
 
-  logLine('info', 'detectando API do ffmpeg.wasm...');
-
+  // ffmpeg.wasm 0.12 UMD exposes window.FFmpeg = { FFmpeg, fetchFile, … }
+  // guard against both possible namespace names
   const lib = window.FFmpegWASM ?? window.FFmpeg;
-  if (!lib) throw new Error('ffmpeg.js não encontrado em window. Verifique o console.');
-
-  logLine('info', `lib keys: ${Object.keys(lib).join(', ')}`);
-
-  const FFmpegClass = lib.FFmpeg;
-  const toBlobURL   = lib.toBlobURL;
-
-  if (typeof FFmpegClass !== 'function') {
-    throw new Error(`FFmpeg class não encontrada. Keys: ${Object.keys(lib).join(', ')}`);
-  }
-  if (typeof toBlobURL !== 'function') {
-    throw new Error(`toBlobURL não encontrada. Keys: ${Object.keys(lib).join(', ')}`);
-  }
+  if (!lib) throw new Error('FFmpeg CDN script not found on window.');
+  const FFmpegClass = (typeof lib.FFmpeg === 'function') ? lib.FFmpeg : lib;
+  if (typeof FFmpegClass !== 'function') throw new Error('FFmpeg class not found. Keys: ' + Object.keys(lib).join(', '));
 
   ffmpeg = new FFmpegClass();
 
   let fileDuration = 0;
+
   ffmpeg.on('log', ({ message }) => {
-    if (message.includes('Error') || message.includes('Invalid')) {
-      logLine('err', 'ffmpeg: ' + message);
-    }
     const dm = message.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+)/);
-    if (dm) {
-      fileDuration = (+dm[1]) * 3600 + (+dm[2]) * 60 + +dm[3];
-      logLine('info', `duração: ${fileDuration.toFixed(2)}s`);
-    }
+    if (dm) fileDuration = (+dm[1])*3600 + (+dm[2])*60 + +dm[3];
+
     const tm = message.match(/time=(\d+):(\d+):(\d+\.\d+)/);
     if (tm && fileDuration > 0) {
-      const cur = (+tm[1]) * 3600 + (+tm[2]) * 60 + +tm[3];
+      const cur = (+tm[1])*3600 + (+tm[2])*60 + +tm[3];
       setProgress(cur / fileDuration * 100);
     }
   });
 
-  ffmpeg.on('progress', ({ progress }) => {
-    if (progress >= 0 && progress <= 1) setProgress(progress * 100);
+  logLine('info', 'loading ffmpeg.wasm core…');
+
+  await ffmpeg.load({
+    coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+    wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
   });
 
-  // Usa core single-thread — NÃO precisa de SharedArrayBuffer nem COOP/COEP headers.
-  // toBlobURL faz fetch do JS/wasm e os serve como blob: URLs, contornando
-  // restrições de crossOriginIsolated que o GitHub Pages não tem por padrão.
-  logLine('info', 'carregando core single-thread via toBlobURL (pode demorar ~10-20s)...');
-
-  const BASE = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-
-  let coreURL, wasmURL;
-  try {
-    [coreURL, wasmURL] = await Promise.all([
-      toBlobURL(`${BASE}/ffmpeg-core.js`,   'text/javascript'),
-      toBlobURL(`${BASE}/ffmpeg-core.wasm`, 'application/wasm'),
-    ]);
-    logLine('ok', 'core baixado do unpkg');
-  } catch (e) {
-    logLine('warn', `unpkg falhou (${e.message}), tentando jsDelivr...`);
-    const CDN2 = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
-    [coreURL, wasmURL] = await Promise.all([
-      toBlobURL(`${CDN2}/ffmpeg-core.js`,   'text/javascript'),
-      toBlobURL(`${CDN2}/ffmpeg-core.wasm`, 'application/wasm'),
-    ]);
-    logLine('ok', 'core baixado do jsDelivr');
-  }
-
-  await ffmpeg.load({ coreURL, wasmURL });
-
   ffmpegReady = true;
-  logLine('ok', 'ffmpeg.wasm pronto ✓');
+  logLine('ok', 'ffmpeg.wasm ready');
 }
 
 async function fileToU8(file) {
-  logLine('info', `lendo ${file.name} (${fmtBytes(file.size)})...`);
   return new Uint8Array(await file.arrayBuffer());
 }
 
@@ -614,7 +605,7 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
   const btn = document.getElementById('convert-btn');
   btn.innerHTML = '<span class="spinner"></span>processing…';
 
-  document.getElementById('log').innerHTML      = '';
+  document.getElementById('log').innerHTML    = '';
   document.getElementById('downloads').innerHTML = '';
   document.getElementById('log-card').style.display = '';
 
@@ -623,29 +614,24 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
   const resW   = parseInt(document.getElementById('res-w').value) || 1280;
   const resH   = parseInt(document.getElementById('res-h').value) || 720;
   const fps    = parseInt(document.getElementById('fps-select').value) || 24;
-  // x264 exige dimensões pares
   const w      = resW % 2 === 0 ? resW : resW + 1;
   const h      = resH % 2 === 0 ? resH : resH + 1;
-
-  logLine('info', `formato: ${format} | bg: ${bgMode} | resolução: ${w}x${h} | fps: ${fps}`);
 
   try {
     await ensureFFmpeg();
   } catch (e) {
-    logLine('err', 'Erro ao carregar ffmpeg: ' + e.message);
+    logLine('err', 'Failed to load ffmpeg: ' + e.message);
     converting = false;
     btn.textContent = 'convert';
     updateBtn();
     return;
   }
 
-  // escreve imagem de background uma vez (se aplicável)
+  // write bg image once
   let bgWritten = false;
   if (bgMode === 'image' && bgImageBlob) {
-    logLine('info', 'escrevendo imagem de background no FS virtual...');
     await ffmpeg.writeFile('bg_img', await fileToU8(bgImageBlob));
     bgWritten = true;
-    logLine('ok', 'imagem de background pronta');
   }
 
   const ext       = format === 'mkv' ? 'mkv' : 'mov';
@@ -656,23 +642,19 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
     const baseName = file.name.replace(/\.wav$/i, '');
     const outName  = baseName + '.' + ext;
 
-    logLine('info', `──── [${i+1}/${wavFiles.length}] ${file.name}`);
+    logLine('info', `[${i+1}/${wavFiles.length}] ${file.name}`);
     setProgress(0);
 
     try {
-      // Escreve o wav no FS virtual do ffmpeg
       await ffmpeg.writeFile('input.wav', await fileToU8(file));
-      logLine('info', 'arquivo escrito no FS virtual, iniciando conversão...');
 
       let cmd = [];
 
       if (bgMode === 'image' && bgWritten) {
-        // Loop na imagem como fundo
         cmd.push('-loop', '1', '-i', 'bg_img');
         cmd.push('-i', 'input.wav');
         cmd.push('-vf', `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`);
       } else {
-        // Gera fundo sólido via lavfi
         const color = bgMode === 'color'
           ? '0x' + document.getElementById('bg-color').value.replace('#', '')
           : '0x000000';
@@ -680,40 +662,28 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
         cmd.push('-i', 'input.wav');
       }
 
-      // Vídeo: x264 lossless
+      // video: lossless x264
       cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p');
 
-      // Áudio
-      if (format === 'mkv') {
-        cmd.push('-c:a', 'flac');
-      } else {
-        cmd.push('-c:a', 'pcm_s24le');
-      }
+      // audio
+      cmd.push('-c:a', format === 'mkv' ? 'flac' : 'pcm_s24le');
 
       cmd.push('-r', String(fps), '-shortest', '-y', 'out.' + ext);
 
-      logLine('info', 'cmd: ffmpeg ' + cmd.join(' '));
-
+      logLine('info', 'ffmpeg ' + cmd.join(' '));
       await ffmpeg.exec(cmd);
-
       setProgress(100);
-      logLine('ok', 'ffmpeg.exec concluído, lendo arquivo de saída...');
 
-      // Lê o arquivo de saída
       const data = await ffmpeg.readFile('out.' + ext);
-      logLine('info', `arquivo lido: ${fmtBytes(data.byteLength ?? data.length)}`);
-
       const mime = format === 'mkv' ? 'video/x-matroska' : 'video/quicktime';
-      const blob = new Blob([data instanceof Uint8Array ? data : new Uint8Array(data)], { type: mime });
+      const blob = new Blob([data.buffer], { type: mime });
       const url  = URL.createObjectURL(blob);
 
-      // Limpa FS virtual
-      try { await ffmpeg.deleteFile('input.wav'); } catch(_) {}
+      await ffmpeg.deleteFile('input.wav');
       try { await ffmpeg.deleteFile('out.' + ext); } catch(_) {}
 
       logLine('ok', `✓ ${outName}  (${fmtBytes(blob.size)})`);
 
-      // Cria link de download
       const a       = document.createElement('a');
       a.className   = 'dl-item';
       a.href        = url;
@@ -722,12 +692,8 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
       downloads.appendChild(a);
 
     } catch (e) {
-      logLine('err', `erro em ${file.name}: ${e.message ?? e}`);
-      logLine('err', `stack: ${e.stack ?? '(sem stack)'}`);
+      logLine('err', `error on ${file.name}: ${e.message || e}`);
       setProgress(0);
-      // Tenta limpar
-      try { await ffmpeg.deleteFile('input.wav'); } catch(_) {}
-      try { await ffmpeg.deleteFile('out.' + ext); } catch(_) {}
     }
   }
 
