@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wav → lossless video</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #090909;
+  --surface: #101010;
+  --surface2: #161616;
+  --border: #1f1f1f;
+  --accent: #c8f560;
+  --accent2: #4af0c4;
+  --text: #e4e4e4;
+  --muted: #4a4a4a;
+  --danger: #ff5f5f;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 52px 20px 80px;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.06) 2px, rgba(0,0,0,.06) 4px);
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* header */
+header { text-align: center; margin-bottom: 52px; }
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 0 48px rgba(200,245,96,.2);
+}
+h1 span { color: var(--text); }
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+/* card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 26px;
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: 14px;
+}
+
+.section-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* dropzone */
+#dropzone {
+  border: 1.5px dashed var(--border);
+  border-radius: 2px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: border-color .2s, background .2s;
+}
+#dropzone:hover, #dropzone.drag-over {
+  border-color: var(--accent);
+  background: rgba(200,245,96,.03);
+}
+#dropzone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.drop-icon { font-size: 2rem; display: block; margin-bottom: 10px; }
+.drop-text { font-size: 0.78rem; color: var(--muted); }
+
+#file-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+
+.file-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 8px 12px;
+  font-size: 0.73rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.file-item .fname { color: var(--text); word-break: break-all; }
+.file-item .fsize { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+/* options grid */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.opt-group { display: flex; flex-direction: column; gap: 6px; }
+
+.opt-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76rem;
+  padding: 9px 28px 9px 10px;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%234a4a4a' d='M5 7L0 2h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+select:focus, select:hover { border-color: var(--accent2); }
+
+.txt-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76rem;
+  padding: 9px 10px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+}
+.txt-input:focus { border-color: var(--accent2); }
+
+/* color picker */
+.color-row { display: flex; gap: 8px; align-items: stretch; }
+
+input[type=color] {
+  width: 40px;
+  height: 38px;
+  padding: 2px 3px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* resolution */
+.res-row { display: flex; gap: 8px; align-items: center; }
+.res-row .txt-input { flex: 1; text-align: center; }
+.res-row .times { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
+
+/* image upload */
+.img-file-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  padding: 8px 10px;
+  width: 100%;
+  cursor: pointer;
+}
+.img-file-input::file-selector-button {
+  background: var(--border);
+  border: none;
+  border-radius: 1px;
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+#img-preview {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-top: 6px;
+}
+
+/* toggle utility */
+.hidden { display: none !important; }
+
+/* note */
+.note {
+  font-size: 0.67rem;
+  color: var(--muted);
+  line-height: 1.75;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.note strong { color: #666; }
+
+/* coi banner */
+#coi-banner {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255,95,95,.07);
+  border: 1px solid rgba(255,95,95,.25);
+  border-radius: 2px;
+  padding: 12px 16px;
+  font-size: 0.7rem;
+  color: #ff9f9f;
+  margin-bottom: 14px;
+  line-height: 1.75;
+}
+#coi-banner a { color: var(--accent2); }
+
+/* convert btn */
+#convert-btn {
+  width: 100%;
+  max-width: 640px;
+  padding: 16px;
+  background: var(--accent);
+  color: #090909;
+  border: none;
+  border-radius: 2px;
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+#convert-btn:hover:not(:disabled) { background: #d6ff6a; transform: translateY(-1px); }
+#convert-btn:active:not(:disabled) { transform: translateY(0); }
+#convert-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.spinner {
+  width: 15px; height: 15px;
+  border: 2px solid #090909;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* log */
+#log-card { display: none; }
+
+#log {
+  background: #0c0c0c;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 12px 14px;
+  font-size: 0.7rem;
+  color: #888;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.75;
+}
+#log .ok   { color: var(--accent); }
+#log .info { color: var(--accent2); }
+#log .err  { color: var(--danger); }
+
+.progress-wrap {
+  margin-top: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  height: 3px;
+  overflow: hidden;
+  display: none;
+}
+#progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .3s; }
+
+/* downloads */
+#downloads { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+
+.dl-item {
+  display: flex;
+  align-items: center;
+  background: #0c160c;
+  border: 1px solid #1c301c;
+  border-radius: 2px;
+  padding: 10px 14px;
+  text-decoration: none;
+  font-size: 0.75rem;
+  color: var(--accent);
+  transition: background .15s;
+  gap: 8px;
+}
+.dl-item:hover { background: #111e11; }
+.dl-item .dl-name { flex: 1; word-break: break-all; }
+.dl-item .dl-size { color: var(--muted); white-space: nowrap; }
+.dl-item .dl-arrow { font-size: 1.1rem; flex-shrink: 0; }
+
+/* footer */
+footer {
+  margin-top: 52px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 480px) {
+  .options-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>wav →</span> lossless<br>video</h1>
+  <p class="subtitle">client-side · ffmpeg.wasm · no server</p>
+</header>
+
+<div id="coi-banner" class="hidden">
+  ⚠ <strong>SharedArrayBuffer unavailable.</strong>
+  FFmpeg.wasm needs it. On GitHub Pages, add
+  <a href="https://github.com/gzuidhof/coi-serviceworker" target="_blank">coi-serviceworker</a>
+  to your repo and include it as the first <code>&lt;script&gt;</code>.
+</div>
+
+<!-- 01 files -->
+<div class="card">
+  <div class="section-label">01 — wav files</div>
+  <div id="dropzone">
+    <input type="file" id="file-input" accept=".wav,audio/wav" multiple>
+    <span class="drop-icon">🎵</span>
+    <div class="drop-text">drop .wav files here or click to browse</div>
+  </div>
+  <div id="file-list"></div>
+</div>
+
+<!-- 02 options -->
+<div class="card">
+  <div class="section-label">02 — output options</div>
+
+  <div class="options-grid">
+    <div class="opt-group">
+      <span class="opt-label">format</span>
+      <select id="format-select">
+        <option value="mkv">MKV + FLAC (recommended)</option>
+        <option value="mov">MOV + PCM s24le</option>
+      </select>
+    </div>
+
+    <div class="opt-group">
+      <span class="opt-label">video background</span>
+      <select id="bg-select">
+        <option value="black">black screen</option>
+        <option value="color">solid color</option>
+        <option value="image">image</option>
+      </select>
+    </div>
+
+    <div class="opt-group">
+      <span class="opt-label">resolution</span>
+      <div class="res-row">
+        <input class="txt-input" type="number" id="res-w" value="1280" min="16" max="7680">
+        <span class="times">×</span>
+        <input class="txt-input" type="number" id="res-h" value="720" min="16" max="4320">
+      </div>
+    </div>
+
+    <div class="opt-group">
+      <span class="opt-label">fps</span>
+      <select id="fps-select">
+        <option value="1">1 fps (smallest file)</option>
+        <option value="24" selected>24 fps</option>
+        <option value="30">30 fps</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- solid color — hidden until selected -->
+  <div id="color-group" class="opt-group hidden" style="margin-top:14px;">
+    <span class="opt-label">background color</span>
+    <div class="color-row">
+      <input type="color" id="bg-color" value="#1a1a2e">
+      <input class="txt-input" type="text" id="color-hex" value="#1a1a2e" maxlength="7" placeholder="#rrggbb">
+    </div>
+  </div>
+
+  <!-- image — hidden until selected -->
+  <div id="img-group" class="opt-group hidden" style="margin-top:14px;">
+    <span class="opt-label">background image</span>
+    <input class="img-file-input" type="file" id="img-input" accept="image/*">
+    <img id="img-preview" class="hidden" alt="background preview">
+  </div>
+
+  <p class="note">
+    <strong>MKV + FLAC</strong> — lossless compression, broad compatibility.<br>
+    <strong>MOV + PCM s24le</strong> — fully uncompressed audio, larger file.<br>
+    Video track uses lossless x264 (CRF 0) in both cases.
+  </p>
+</div>
+
+<button id="convert-btn" disabled>convert</button>
+
+<div class="card" id="log-card">
+  <div class="section-label">log</div>
+  <div id="log"></div>
+  <div class="progress-wrap" id="progress-wrap">
+    <div id="progress-bar"></div>
+  </div>
+  <div id="downloads"></div>
+</div>
+
+<footer>made by Claude.</footer>
+
+<!-- 1. coi-serviceworker MUST be first -->
+<script src="coi-serviceworker.js"></script>
+<!-- 2. ffmpeg.wasm -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script>
+'use strict';
+
+/* ── SharedArrayBuffer check ─────────────────────────────────────── */
+if (typeof SharedArrayBuffer === 'undefined') {
+  document.getElementById('coi-banner').classList.remove('hidden');
+}
+
+/* ── state ───────────────────────────────────────────────────────── */
+let wavFiles    = [];
+let bgImageBlob = null;
+let ffmpeg      = null;
+let ffmpegReady = false;
+let converting  = false;
+
+/* ── utils ───────────────────────────────────────────────────────── */
+function fmtBytes(b) {
+  if (b < 1024)    return b + ' B';
+  if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1048576).toFixed(2) + ' MB';
+}
+
+function logLine(type, msg) {
+  document.getElementById('log-card').style.display = '';
+  const el  = document.getElementById('log');
+  const div = document.createElement('div');
+  div.className   = type;
+  const ts        = new Date().toLocaleTimeString('en', { hour12: false });
+  div.textContent = `[${ts}] ${msg}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setProgress(pct) {
+  document.getElementById('progress-wrap').style.display = '';
+  document.getElementById('progress-bar').style.width = Math.min(100, pct) + '%';
+}
+
+function updateBtn() {
+  document.getElementById('convert-btn').disabled = (wavFiles.length === 0 || converting);
+}
+
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  el.innerHTML = '';
+  wavFiles.forEach(f => {
+    const d = document.createElement('div');
+    d.className = 'file-item';
+    d.innerHTML = `<span class="fname">${f.name}</span><span class="fsize">${fmtBytes(f.size)}</span>`;
+    el.appendChild(d);
+  });
+}
+
+/* ── file input ──────────────────────────────────────────────────── */
+function applyFiles(list) {
+  wavFiles = Array.from(list).filter(f => /\.wav$/i.test(f.name));
+  renderFileList();
+  updateBtn();
+}
+
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('file-input');
+
+fi.addEventListener('change', () => applyFiles(fi.files));
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  applyFiles(e.dataTransfer.files);
+});
+
+/* ── background switcher ─────────────────────────────────────────── */
+document.getElementById('bg-select').addEventListener('change', function () {
+  document.getElementById('color-group').classList.toggle('hidden', this.value !== 'color');
+  document.getElementById('img-group').classList.toggle('hidden',   this.value !== 'image');
+});
+
+/* ── color sync ──────────────────────────────────────────────────── */
+document.getElementById('bg-color').addEventListener('input', function () {
+  document.getElementById('color-hex').value = this.value;
+});
+document.getElementById('color-hex').addEventListener('input', function () {
+  if (/^#[0-9a-fA-F]{6}$/.test(this.value))
+    document.getElementById('bg-color').value = this.value;
+});
+
+/* ── image upload ────────────────────────────────────────────────── */
+document.getElementById('img-input').addEventListener('change', function () {
+  const f = this.files[0];
+  if (!f) return;
+  bgImageBlob = f;
+  const prev = document.getElementById('img-preview');
+  prev.src   = URL.createObjectURL(f);
+  prev.classList.remove('hidden');
+});
+
+/* ── load ffmpeg ─────────────────────────────────────────────────── */
+async function ensureFFmpeg() {
+  if (ffmpegReady) return;
+
+  // ffmpeg.wasm 0.12 UMD exposes window.FFmpeg = { FFmpeg, fetchFile, … }
+  // guard against both possible namespace names
+  const lib = window.FFmpegWASM ?? window.FFmpeg;
+  if (!lib) throw new Error('FFmpeg CDN script not found on window.');
+  const FFmpegClass = (typeof lib.FFmpeg === 'function') ? lib.FFmpeg : lib;
+  if (typeof FFmpegClass !== 'function') throw new Error('FFmpeg class not found. Keys: ' + Object.keys(lib).join(', '));
+
+  ffmpeg = new FFmpegClass();
+
+  let fileDuration = 0;
+
+  ffmpeg.on('log', ({ message }) => {
+    const dm = message.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+)/);
+    if (dm) fileDuration = (+dm[1])*3600 + (+dm[2])*60 + +dm[3];
+
+    const tm = message.match(/time=(\d+):(\d+):(\d+\.\d+)/);
+    if (tm && fileDuration > 0) {
+      const cur = (+tm[1])*3600 + (+tm[2])*60 + +tm[3];
+      setProgress(cur / fileDuration * 100);
+    }
+  });
+
+  logLine('info', 'loading ffmpeg.wasm core…');
+
+  await ffmpeg.load({
+    coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+    wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+  });
+
+  ffmpegReady = true;
+  logLine('ok', 'ffmpeg.wasm ready');
+}
+
+async function fileToU8(file) {
+  return new Uint8Array(await file.arrayBuffer());
+}
+
+/* ── convert ─────────────────────────────────────────────────────── */
+document.getElementById('convert-btn').addEventListener('click', async () => {
+  if (wavFiles.length === 0 || converting) return;
+
+  converting = true;
+  updateBtn();
+
+  const btn = document.getElementById('convert-btn');
+  btn.innerHTML = '<span class="spinner"></span>processing…';
+
+  document.getElementById('log').innerHTML    = '';
+  document.getElementById('downloads').innerHTML = '';
+  document.getElementById('log-card').style.display = '';
+
+  const format = document.getElementById('format-select').value;
+  const bgMode = document.getElementById('bg-select').value;
+  const resW   = parseInt(document.getElementById('res-w').value) || 1280;
+  const resH   = parseInt(document.getElementById('res-h').value) || 720;
+  const fps    = parseInt(document.getElementById('fps-select').value) || 24;
+  const w      = resW % 2 === 0 ? resW : resW + 1;
+  const h      = resH % 2 === 0 ? resH : resH + 1;
+
+  try {
+    await ensureFFmpeg();
+  } catch (e) {
+    logLine('err', 'Failed to load ffmpeg: ' + e.message);
+    converting = false;
+    btn.textContent = 'convert';
+    updateBtn();
+    return;
+  }
+
+  // write bg image once
+  let bgWritten = false;
+  if (bgMode === 'image' && bgImageBlob) {
+    await ffmpeg.writeFile('bg_img', await fileToU8(bgImageBlob));
+    bgWritten = true;
+  }
+
+  const ext       = format === 'mkv' ? 'mkv' : 'mov';
+  const downloads = document.getElementById('downloads');
+
+  for (let i = 0; i < wavFiles.length; i++) {
+    const file     = wavFiles[i];
+    const baseName = file.name.replace(/\.wav$/i, '');
+    const outName  = baseName + '.' + ext;
+
+    logLine('info', `[${i+1}/${wavFiles.length}] ${file.name}`);
+    setProgress(0);
+
+    try {
+      await ffmpeg.writeFile('input.wav', await fileToU8(file));
+
+      let cmd = [];
+
+      if (bgMode === 'image' && bgWritten) {
+        cmd.push('-loop', '1', '-i', 'bg_img');
+        cmd.push('-i', 'input.wav');
+        cmd.push('-vf', `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`);
+      } else {
+        const color = bgMode === 'color'
+          ? '0x' + document.getElementById('bg-color').value.replace('#', '')
+          : '0x000000';
+        cmd.push('-f', 'lavfi', '-i', `color=c=${color}:s=${w}x${h}:r=${fps}`);
+        cmd.push('-i', 'input.wav');
+      }
+
+      // video: lossless x264
+      cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p');
+
+      // audio
+      cmd.push('-c:a', format === 'mkv' ? 'flac' : 'pcm_s24le');
+
+      cmd.push('-r', String(fps), '-shortest', '-y', 'out.' + ext);
+
+      logLine('info', 'ffmpeg ' + cmd.join(' '));
+      await ffmpeg.exec(cmd);
+      setProgress(100);
+
+      const data = await ffmpeg.readFile('out.' + ext);
+      const mime = format === 'mkv' ? 'video/x-matroska' : 'video/quicktime';
+      const blob = new Blob([data.buffer], { type: mime });
+      const url  = URL.createObjectURL(blob);
+
+      await ffmpeg.deleteFile('input.wav');
+      try { await ffmpeg.deleteFile('out.' + ext); } catch(_) {}
+
+      logLine('ok', `✓ ${outName}  (${fmtBytes(blob.size)})`);
+
+      const a       = document.createElement('a');
+      a.className   = 'dl-item';
+      a.href        = url;
+      a.download    = outName;
+      a.innerHTML   = `<span class="dl-name">${outName}</span><span class="dl-size">${fmtBytes(blob.size)}</span><span class="dl-arrow">↓</span>`;
+      downloads.appendChild(a);
+
+    } catch (e) {
+      logLine('err', `error on ${file.name}: ${e.message || e}`);
+      setProgress(0);
+    }
+  }
+
+  if (bgWritten) try { await ffmpeg.deleteFile('bg_img'); } catch(_) {}
+
+  converting = false;
+  btn.textContent = 'convert';
+  updateBtn();
+  logLine('ok', 'done.');
+});
+</script>
+</body>
+</html>
