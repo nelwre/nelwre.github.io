@@ -229,19 +229,7 @@ input[type=color] {
 }
 .note strong { color: #666; }
 
-#sab-banner {
-  width: 100%;
-  max-width: 640px;
-  background: rgba(255,95,95,.07);
-  border: 1px solid rgba(255,95,95,.25);
-  border-radius: 2px;
-  padding: 12px 16px;
-  font-size: 0.7rem;
-  color: #ff9f9f;
-  margin-bottom: 14px;
-  line-height: 1.75;
-}
-#sab-banner a { color: var(--accent2); }
+
 
 #convert-btn {
   width: 100%;
@@ -346,14 +334,6 @@ footer {
   <p class="subtitle">client-side · ffmpeg.wasm · no server</p>
 </header>
 
-<!-- SharedArrayBuffer warning (shown if SAB unavailable) -->
-<div id="sab-banner" class="hidden">
-  ⚠ <strong>SharedArrayBuffer indisponível.</strong>
-  O FFmpeg.wasm precisa dele. No GitHub Pages isso é resolvido automaticamente pelo
-  <code>coi-serviceworker</code> embutido nesta página — mas ele só funciona se o site
-  for servido via HTTPS. Tente recarregar a página.
-</div>
-
 <!-- 01 files -->
 <div class="card">
   <div class="section-label">01 — wav files</div>
@@ -440,92 +420,12 @@ footer {
 
 <footer>made by Claude.</footer>
 
-<!-- ─── coi-serviceworker inline ─────────────────────────────────────────── -->
-<!-- Enables SharedArrayBuffer on GitHub Pages (HTTPS) without a separate file -->
-<script>
-(function() {
-  'use strict';
-  // Only register if we're on HTTPS (required for service workers)
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
-
-  const LOCK = 'coi-lock';
-
-  // If SAB already available, nothing to do
-  if (typeof SharedArrayBuffer !== 'undefined') return;
-
-  // Check if we just reloaded (avoid infinite loop)
-  if (sessionStorage.getItem(LOCK)) {
-    sessionStorage.removeItem(LOCK);
-    return;
-  }
-
-  const SW_CODE = `
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
-self.addEventListener('fetch', function(e) {
-  if (e.request.cache === 'only-if-cached' && e.request.mode !== 'same-origin') return;
-  e.respondWith(
-    fetch(e.request).then(function(r) {
-      if (r.status === 0) return r;
-      var h = new Headers(r.headers);
-      h.set('Cross-Origin-Opener-Policy', 'same-origin');
-      h.set('Cross-Origin-Embedder-Policy', 'require-corp');
-      return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
-    })
-  );
-});
-`;
-
-  if (!('serviceWorker' in navigator)) return;
-
-  var blob = new Blob([SW_CODE], { type: 'application/javascript' });
-  var swURL = URL.createObjectURL(blob);
-
-  navigator.serviceWorker.register(swURL, { scope: '/' })
-    .then(function(reg) {
-      if (reg.active) {
-        // SW already active, reload once to get headers
-        sessionStorage.setItem(LOCK, '1');
-        location.reload();
-      } else {
-        // Wait for activation
-        var sw = reg.installing || reg.waiting;
-        sw.addEventListener('statechange', function() {
-          if (sw.state === 'activated') {
-            sessionStorage.setItem(LOCK, '1');
-            location.reload();
-          }
-        });
-      }
-    })
-    .catch(function(err) {
-      console.warn('[coi] SW registration failed:', err);
-    });
-})();
-</script>
-
-<!-- ─── ffmpeg.wasm ────────────────────────────────────────────────────── -->
-<script>
-// Carrega ffmpeg.wasm via script dinâmico para poder capturar erros de carregamento
-(function() {
-  var s = document.createElement('script');
-  s.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js';
-  s.onerror = function() {
-    document.getElementById('log-card').style.display = '';
-    logLine('err', 'Falha ao carregar ffmpeg.js do CDN (unpkg). Verifique sua conexão.');
-  };
-  document.head.appendChild(s);
-})();
-</script>
+<!-- ─── ffmpeg.wasm (single-thread — não precisa de SharedArrayBuffer) ── -->
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
 
 <!-- ─── app ───────────────────────────────────────────────────────────── -->
 <script>
 'use strict';
-
-/* ── SAB check ───────────────────────────────────────────────────── */
-if (typeof SharedArrayBuffer === 'undefined') {
-  document.getElementById('sab-banner').classList.remove('hidden');
-}
 
 /* ── state ───────────────────────────────────────────────────────── */
 let wavFiles    = [];
@@ -629,46 +529,35 @@ async function ensureFFmpeg() {
     return;
   }
 
-  // Verifica SAB antes de tentar carregar
-  if (typeof SharedArrayBuffer === 'undefined') {
-    throw new Error('SharedArrayBuffer indisponível. O ffmpeg.wasm não pode funcionar sem ele. Recarregue a página (o service worker vai ativar os headers necessários).');
-  }
-
-  // Detecta a lib exposta pelo UMD bundle do ffmpeg 0.12.x
-  // O bundle pode expor window.FFmpegWASM ou window.FFmpeg dependendo da versão
   logLine('info', 'detectando API do ffmpeg.wasm...');
 
   const lib = window.FFmpegWASM ?? window.FFmpeg;
-  if (!lib) {
-    throw new Error('ffmpeg.js não encontrado em window. CDN pode ter falhado. Verifique o console.');
-  }
+  if (!lib) throw new Error('ffmpeg.js não encontrado em window. Verifique o console.');
 
   logLine('info', `lib keys: ${Object.keys(lib).join(', ')}`);
 
-  // No 0.12.x o UMD expõe { FFmpeg, fetchFile, toBlobURL, ... }
   const FFmpegClass = lib.FFmpeg;
+  const toBlobURL   = lib.toBlobURL;
+
   if (typeof FFmpegClass !== 'function') {
-    throw new Error(`FFmpeg class não encontrada. Keys disponíveis: ${Object.keys(lib).join(', ')}`);
+    throw new Error(`FFmpeg class não encontrada. Keys: ${Object.keys(lib).join(', ')}`);
+  }
+  if (typeof toBlobURL !== 'function') {
+    throw new Error(`toBlobURL não encontrada. Keys: ${Object.keys(lib).join(', ')}`);
   }
 
   ffmpeg = new FFmpegClass();
 
-  // Log do ffmpeg interno — captura progresso e erros do processo
   let fileDuration = 0;
   ffmpeg.on('log', ({ message }) => {
-    // Mostra logs relevantes (não todos para não poluir)
-    if (message.includes('Error') || message.includes('error') || message.includes('Invalid')) {
+    if (message.includes('Error') || message.includes('Invalid')) {
       logLine('err', 'ffmpeg: ' + message);
     }
-
-    // Extrai duração total para calcular progresso
     const dm = message.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+)/);
     if (dm) {
       fileDuration = (+dm[1]) * 3600 + (+dm[2]) * 60 + +dm[3];
-      logLine('info', `duração detectada: ${fileDuration.toFixed(2)}s`);
+      logLine('info', `duração: ${fileDuration.toFixed(2)}s`);
     }
-
-    // Atualiza barra de progresso
     const tm = message.match(/time=(\d+):(\d+):(\d+\.\d+)/);
     if (tm && fileDuration > 0) {
       const cur = (+tm[1]) * 3600 + (+tm[2]) * 60 + +tm[3];
@@ -680,22 +569,31 @@ async function ensureFFmpeg() {
     if (progress >= 0 && progress <= 1) setProgress(progress * 100);
   });
 
-  logLine('info', 'carregando ffmpeg-core.wasm (pode demorar ~5-15s na primeira vez)...');
+  // Usa core single-thread — NÃO precisa de SharedArrayBuffer nem COOP/COEP headers.
+  // toBlobURL faz fetch do JS/wasm e os serve como blob: URLs, contornando
+  // restrições de crossOriginIsolated que o GitHub Pages não tem por padrão.
+  logLine('info', 'carregando core single-thread via toBlobURL (pode demorar ~10-20s)...');
 
-  // Tenta o core 0.12.6 (compatível com ffmpeg 0.12.6)
+  const BASE = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+
+  let coreURL, wasmURL;
   try {
-    await ffmpeg.load({
-      coreURL:  'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-      wasmURL:  'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
-    });
+    [coreURL, wasmURL] = await Promise.all([
+      toBlobURL(`${BASE}/ffmpeg-core.js`,   'text/javascript'),
+      toBlobURL(`${BASE}/ffmpeg-core.wasm`, 'application/wasm'),
+    ]);
+    logLine('ok', 'core baixado do unpkg');
   } catch (e) {
-    // Fallback: tenta com o URL alternativo do jsDelivr
-    logLine('warn', 'unpkg falhou, tentando jsDelivr...');
-    await ffmpeg.load({
-      coreURL:  'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-      wasmURL:  'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
-    });
+    logLine('warn', `unpkg falhou (${e.message}), tentando jsDelivr...`);
+    const CDN2 = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+    [coreURL, wasmURL] = await Promise.all([
+      toBlobURL(`${CDN2}/ffmpeg-core.js`,   'text/javascript'),
+      toBlobURL(`${CDN2}/ffmpeg-core.wasm`, 'application/wasm'),
+    ]);
+    logLine('ok', 'core baixado do jsDelivr');
   }
+
+  await ffmpeg.load({ coreURL, wasmURL });
 
   ffmpegReady = true;
   logLine('ok', 'ffmpeg.wasm pronto ✓');
