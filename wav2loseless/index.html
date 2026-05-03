@@ -41,7 +41,6 @@ body::before {
   z-index: 999;
 }
 
-/* header */
 header { text-align: center; margin-bottom: 52px; }
 
 h1 {
@@ -62,7 +61,6 @@ h1 span { color: var(--text); }
   letter-spacing: 0.1em;
 }
 
-/* card */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -81,7 +79,6 @@ h1 span { color: var(--text); }
   margin-bottom: 16px;
 }
 
-/* dropzone */
 #dropzone {
   border: 1.5px dashed var(--border);
   border-radius: 2px;
@@ -122,7 +119,6 @@ h1 span { color: var(--text); }
 .file-item .fname { color: var(--text); word-break: break-all; }
 .file-item .fsize { color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 
-/* options grid */
 .options-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -172,7 +168,6 @@ select:focus, select:hover { border-color: var(--accent2); }
 }
 .txt-input:focus { border-color: var(--accent2); }
 
-/* color picker */
 .color-row { display: flex; gap: 8px; align-items: stretch; }
 
 input[type=color] {
@@ -186,12 +181,10 @@ input[type=color] {
   flex-shrink: 0;
 }
 
-/* resolution */
 .res-row { display: flex; gap: 8px; align-items: center; }
 .res-row .txt-input { flex: 1; text-align: center; }
 .res-row .times { color: var(--muted); font-size: 0.85rem; flex-shrink: 0; }
 
-/* image upload */
 .img-file-input {
   background: var(--surface2);
   border: 1px solid var(--border);
@@ -224,10 +217,8 @@ input[type=color] {
   margin-top: 6px;
 }
 
-/* toggle utility */
 .hidden { display: none !important; }
 
-/* note */
 .note {
   font-size: 0.67rem;
   color: var(--muted);
@@ -238,8 +229,7 @@ input[type=color] {
 }
 .note strong { color: #666; }
 
-/* coi banner */
-#coi-banner {
+#sab-banner {
   width: 100%;
   max-width: 640px;
   background: rgba(255,95,95,.07);
@@ -251,9 +241,8 @@ input[type=color] {
   margin-bottom: 14px;
   line-height: 1.75;
 }
-#coi-banner a { color: var(--accent2); }
+#sab-banner a { color: var(--accent2); }
 
-/* convert btn */
 #convert-btn {
   width: 100%;
   max-width: 640px;
@@ -288,7 +277,6 @@ input[type=color] {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* log */
 #log-card { display: none; }
 
 #log {
@@ -298,13 +286,15 @@ input[type=color] {
   padding: 12px 14px;
   font-size: 0.7rem;
   color: #888;
-  max-height: 200px;
+  max-height: 280px;
   overflow-y: auto;
   line-height: 1.75;
+  word-break: break-all;
 }
 #log .ok   { color: var(--accent); }
 #log .info { color: var(--accent2); }
 #log .err  { color: var(--danger); }
+#log .warn { color: #f0a04a; }
 
 .progress-wrap {
   margin-top: 10px;
@@ -317,7 +307,6 @@ input[type=color] {
 }
 #progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .3s; }
 
-/* downloads */
 #downloads { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 
 .dl-item {
@@ -338,7 +327,6 @@ input[type=color] {
 .dl-item .dl-size { color: var(--muted); white-space: nowrap; }
 .dl-item .dl-arrow { font-size: 1.1rem; flex-shrink: 0; }
 
-/* footer */
 footer {
   margin-top: 52px;
   font-size: 0.65rem;
@@ -358,11 +346,12 @@ footer {
   <p class="subtitle">client-side · ffmpeg.wasm · no server</p>
 </header>
 
-<div id="coi-banner" class="hidden">
-  ⚠ <strong>SharedArrayBuffer unavailable.</strong>
-  FFmpeg.wasm needs it. On GitHub Pages, add
-  <a href="https://github.com/gzuidhof/coi-serviceworker" target="_blank">coi-serviceworker</a>
-  to your repo and include it as the first <code>&lt;script&gt;</code>.
+<!-- SharedArrayBuffer warning (shown if SAB unavailable) -->
+<div id="sab-banner" class="hidden">
+  ⚠ <strong>SharedArrayBuffer indisponível.</strong>
+  O FFmpeg.wasm precisa dele. No GitHub Pages isso é resolvido automaticamente pelo
+  <code>coi-serviceworker</code> embutido nesta página — mas ele só funciona se o site
+  for servido via HTTPS. Tente recarregar a página.
 </div>
 
 <!-- 01 files -->
@@ -417,7 +406,6 @@ footer {
     </div>
   </div>
 
-  <!-- solid color — hidden until selected -->
   <div id="color-group" class="opt-group hidden" style="margin-top:14px;">
     <span class="opt-label">background color</span>
     <div class="color-row">
@@ -426,7 +414,6 @@ footer {
     </div>
   </div>
 
-  <!-- image — hidden until selected -->
   <div id="img-group" class="opt-group hidden" style="margin-top:14px;">
     <span class="opt-label">background image</span>
     <input class="img-file-input" type="file" id="img-input" accept="image/*">
@@ -453,16 +440,91 @@ footer {
 
 <footer>made by Claude.</footer>
 
-<!-- 1. coi-serviceworker MUST be first -->
-<script src="coi-serviceworker.js"></script>
-<!-- 2. ffmpeg.wasm -->
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<!-- ─── coi-serviceworker inline ─────────────────────────────────────────── -->
+<!-- Enables SharedArrayBuffer on GitHub Pages (HTTPS) without a separate file -->
+<script>
+(function() {
+  'use strict';
+  // Only register if we're on HTTPS (required for service workers)
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost') return;
+
+  const LOCK = 'coi-lock';
+
+  // If SAB already available, nothing to do
+  if (typeof SharedArrayBuffer !== 'undefined') return;
+
+  // Check if we just reloaded (avoid infinite loop)
+  if (sessionStorage.getItem(LOCK)) {
+    sessionStorage.removeItem(LOCK);
+    return;
+  }
+
+  const SW_CODE = `
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', function(e) {
+  if (e.request.cache === 'only-if-cached' && e.request.mode !== 'same-origin') return;
+  e.respondWith(
+    fetch(e.request).then(function(r) {
+      if (r.status === 0) return r;
+      var h = new Headers(r.headers);
+      h.set('Cross-Origin-Opener-Policy', 'same-origin');
+      h.set('Cross-Origin-Embedder-Policy', 'require-corp');
+      return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+    })
+  );
+});
+`;
+
+  if (!('serviceWorker' in navigator)) return;
+
+  var blob = new Blob([SW_CODE], { type: 'application/javascript' });
+  var swURL = URL.createObjectURL(blob);
+
+  navigator.serviceWorker.register(swURL, { scope: '/' })
+    .then(function(reg) {
+      if (reg.active) {
+        // SW already active, reload once to get headers
+        sessionStorage.setItem(LOCK, '1');
+        location.reload();
+      } else {
+        // Wait for activation
+        var sw = reg.installing || reg.waiting;
+        sw.addEventListener('statechange', function() {
+          if (sw.state === 'activated') {
+            sessionStorage.setItem(LOCK, '1');
+            location.reload();
+          }
+        });
+      }
+    })
+    .catch(function(err) {
+      console.warn('[coi] SW registration failed:', err);
+    });
+})();
+</script>
+
+<!-- ─── ffmpeg.wasm ────────────────────────────────────────────────────── -->
+<script>
+// Carrega ffmpeg.wasm via script dinâmico para poder capturar erros de carregamento
+(function() {
+  var s = document.createElement('script');
+  s.src = 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js';
+  s.onerror = function() {
+    document.getElementById('log-card').style.display = '';
+    logLine('err', 'Falha ao carregar ffmpeg.js do CDN (unpkg). Verifique sua conexão.');
+  };
+  document.head.appendChild(s);
+})();
+</script>
+
+<!-- ─── app ───────────────────────────────────────────────────────────── -->
 <script>
 'use strict';
 
-/* ── SharedArrayBuffer check ─────────────────────────────────────── */
+/* ── SAB check ───────────────────────────────────────────────────── */
 if (typeof SharedArrayBuffer === 'undefined') {
-  document.getElementById('coi-banner').classList.remove('hidden');
+  document.getElementById('sab-banner').classList.remove('hidden');
 }
 
 /* ── state ───────────────────────────────────────────────────────── */
@@ -480,14 +542,17 @@ function fmtBytes(b) {
 }
 
 function logLine(type, msg) {
-  document.getElementById('log-card').style.display = '';
+  const card = document.getElementById('log-card');
+  card.style.display = '';
   const el  = document.getElementById('log');
   const div = document.createElement('div');
-  div.className   = type;
-  const ts        = new Date().toLocaleTimeString('en', { hour12: false });
+  div.className = type;
+  const ts = new Date().toLocaleTimeString('en', { hour12: false });
   div.textContent = `[${ts}] ${msg}`;
   el.appendChild(div);
   el.scrollTop = el.scrollHeight;
+  // também loga no console para facilitar debug
+  console[type === 'err' ? 'error' : 'log'](`[wav2video][${type}] ${msg}`);
 }
 
 function setProgress(pct) {
@@ -512,7 +577,10 @@ function renderFileList() {
 
 /* ── file input ──────────────────────────────────────────────────── */
 function applyFiles(list) {
-  wavFiles = Array.from(list).filter(f => /\.wav$/i.test(f.name));
+  const all = Array.from(list);
+  wavFiles = all.filter(f => /\.wav$/i.test(f.name));
+  const rejected = all.length - wavFiles.length;
+  if (rejected > 0) logLine('warn', `${rejected} arquivo(s) ignorado(s) (não são .wav)`);
   renderFileList();
   updateBtn();
 }
@@ -556,42 +624,85 @@ document.getElementById('img-input').addEventListener('change', function () {
 
 /* ── load ffmpeg ─────────────────────────────────────────────────── */
 async function ensureFFmpeg() {
-  if (ffmpegReady) return;
+  if (ffmpegReady) {
+    logLine('info', 'ffmpeg já carregado, reutilizando.');
+    return;
+  }
 
-  // ffmpeg.wasm 0.12 UMD exposes window.FFmpeg = { FFmpeg, fetchFile, … }
-  // guard against both possible namespace names
+  // Verifica SAB antes de tentar carregar
+  if (typeof SharedArrayBuffer === 'undefined') {
+    throw new Error('SharedArrayBuffer indisponível. O ffmpeg.wasm não pode funcionar sem ele. Recarregue a página (o service worker vai ativar os headers necessários).');
+  }
+
+  // Detecta a lib exposta pelo UMD bundle do ffmpeg 0.12.x
+  // O bundle pode expor window.FFmpegWASM ou window.FFmpeg dependendo da versão
+  logLine('info', 'detectando API do ffmpeg.wasm...');
+
   const lib = window.FFmpegWASM ?? window.FFmpeg;
-  if (!lib) throw new Error('FFmpeg CDN script not found on window.');
-  const FFmpegClass = (typeof lib.FFmpeg === 'function') ? lib.FFmpeg : lib;
-  if (typeof FFmpegClass !== 'function') throw new Error('FFmpeg class not found. Keys: ' + Object.keys(lib).join(', '));
+  if (!lib) {
+    throw new Error('ffmpeg.js não encontrado em window. CDN pode ter falhado. Verifique o console.');
+  }
+
+  logLine('info', `lib keys: ${Object.keys(lib).join(', ')}`);
+
+  // No 0.12.x o UMD expõe { FFmpeg, fetchFile, toBlobURL, ... }
+  const FFmpegClass = lib.FFmpeg;
+  if (typeof FFmpegClass !== 'function') {
+    throw new Error(`FFmpeg class não encontrada. Keys disponíveis: ${Object.keys(lib).join(', ')}`);
+  }
 
   ffmpeg = new FFmpegClass();
 
+  // Log do ffmpeg interno — captura progresso e erros do processo
   let fileDuration = 0;
-
   ffmpeg.on('log', ({ message }) => {
-    const dm = message.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+)/);
-    if (dm) fileDuration = (+dm[1])*3600 + (+dm[2])*60 + +dm[3];
+    // Mostra logs relevantes (não todos para não poluir)
+    if (message.includes('Error') || message.includes('error') || message.includes('Invalid')) {
+      logLine('err', 'ffmpeg: ' + message);
+    }
 
+    // Extrai duração total para calcular progresso
+    const dm = message.match(/Duration:\s*(\d+):(\d+):(\d+\.\d+)/);
+    if (dm) {
+      fileDuration = (+dm[1]) * 3600 + (+dm[2]) * 60 + +dm[3];
+      logLine('info', `duração detectada: ${fileDuration.toFixed(2)}s`);
+    }
+
+    // Atualiza barra de progresso
     const tm = message.match(/time=(\d+):(\d+):(\d+\.\d+)/);
     if (tm && fileDuration > 0) {
-      const cur = (+tm[1])*3600 + (+tm[2])*60 + +tm[3];
+      const cur = (+tm[1]) * 3600 + (+tm[2]) * 60 + +tm[3];
       setProgress(cur / fileDuration * 100);
     }
   });
 
-  logLine('info', 'loading ffmpeg.wasm core…');
-
-  await ffmpeg.load({
-    coreURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
-    wasmURL: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+  ffmpeg.on('progress', ({ progress }) => {
+    if (progress >= 0 && progress <= 1) setProgress(progress * 100);
   });
 
+  logLine('info', 'carregando ffmpeg-core.wasm (pode demorar ~5-15s na primeira vez)...');
+
+  // Tenta o core 0.12.6 (compatível com ffmpeg 0.12.6)
+  try {
+    await ffmpeg.load({
+      coreURL:  'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+      wasmURL:  'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+    });
+  } catch (e) {
+    // Fallback: tenta com o URL alternativo do jsDelivr
+    logLine('warn', 'unpkg falhou, tentando jsDelivr...');
+    await ffmpeg.load({
+      coreURL:  'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.js',
+      wasmURL:  'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd/ffmpeg-core.wasm',
+    });
+  }
+
   ffmpegReady = true;
-  logLine('ok', 'ffmpeg.wasm ready');
+  logLine('ok', 'ffmpeg.wasm pronto ✓');
 }
 
 async function fileToU8(file) {
+  logLine('info', `lendo ${file.name} (${fmtBytes(file.size)})...`);
   return new Uint8Array(await file.arrayBuffer());
 }
 
@@ -605,7 +716,7 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
   const btn = document.getElementById('convert-btn');
   btn.innerHTML = '<span class="spinner"></span>processing…';
 
-  document.getElementById('log').innerHTML    = '';
+  document.getElementById('log').innerHTML      = '';
   document.getElementById('downloads').innerHTML = '';
   document.getElementById('log-card').style.display = '';
 
@@ -614,24 +725,29 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
   const resW   = parseInt(document.getElementById('res-w').value) || 1280;
   const resH   = parseInt(document.getElementById('res-h').value) || 720;
   const fps    = parseInt(document.getElementById('fps-select').value) || 24;
+  // x264 exige dimensões pares
   const w      = resW % 2 === 0 ? resW : resW + 1;
   const h      = resH % 2 === 0 ? resH : resH + 1;
+
+  logLine('info', `formato: ${format} | bg: ${bgMode} | resolução: ${w}x${h} | fps: ${fps}`);
 
   try {
     await ensureFFmpeg();
   } catch (e) {
-    logLine('err', 'Failed to load ffmpeg: ' + e.message);
+    logLine('err', 'Erro ao carregar ffmpeg: ' + e.message);
     converting = false;
     btn.textContent = 'convert';
     updateBtn();
     return;
   }
 
-  // write bg image once
+  // escreve imagem de background uma vez (se aplicável)
   let bgWritten = false;
   if (bgMode === 'image' && bgImageBlob) {
+    logLine('info', 'escrevendo imagem de background no FS virtual...');
     await ffmpeg.writeFile('bg_img', await fileToU8(bgImageBlob));
     bgWritten = true;
+    logLine('ok', 'imagem de background pronta');
   }
 
   const ext       = format === 'mkv' ? 'mkv' : 'mov';
@@ -642,19 +758,23 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
     const baseName = file.name.replace(/\.wav$/i, '');
     const outName  = baseName + '.' + ext;
 
-    logLine('info', `[${i+1}/${wavFiles.length}] ${file.name}`);
+    logLine('info', `──── [${i+1}/${wavFiles.length}] ${file.name}`);
     setProgress(0);
 
     try {
+      // Escreve o wav no FS virtual do ffmpeg
       await ffmpeg.writeFile('input.wav', await fileToU8(file));
+      logLine('info', 'arquivo escrito no FS virtual, iniciando conversão...');
 
       let cmd = [];
 
       if (bgMode === 'image' && bgWritten) {
+        // Loop na imagem como fundo
         cmd.push('-loop', '1', '-i', 'bg_img');
         cmd.push('-i', 'input.wav');
         cmd.push('-vf', `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2`);
       } else {
+        // Gera fundo sólido via lavfi
         const color = bgMode === 'color'
           ? '0x' + document.getElementById('bg-color').value.replace('#', '')
           : '0x000000';
@@ -662,28 +782,40 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
         cmd.push('-i', 'input.wav');
       }
 
-      // video: lossless x264
+      // Vídeo: x264 lossless
       cmd.push('-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '0', '-pix_fmt', 'yuv420p');
 
-      // audio
-      cmd.push('-c:a', format === 'mkv' ? 'flac' : 'pcm_s24le');
+      // Áudio
+      if (format === 'mkv') {
+        cmd.push('-c:a', 'flac');
+      } else {
+        cmd.push('-c:a', 'pcm_s24le');
+      }
 
       cmd.push('-r', String(fps), '-shortest', '-y', 'out.' + ext);
 
-      logLine('info', 'ffmpeg ' + cmd.join(' '));
-      await ffmpeg.exec(cmd);
-      setProgress(100);
+      logLine('info', 'cmd: ffmpeg ' + cmd.join(' '));
 
+      await ffmpeg.exec(cmd);
+
+      setProgress(100);
+      logLine('ok', 'ffmpeg.exec concluído, lendo arquivo de saída...');
+
+      // Lê o arquivo de saída
       const data = await ffmpeg.readFile('out.' + ext);
+      logLine('info', `arquivo lido: ${fmtBytes(data.byteLength ?? data.length)}`);
+
       const mime = format === 'mkv' ? 'video/x-matroska' : 'video/quicktime';
-      const blob = new Blob([data.buffer], { type: mime });
+      const blob = new Blob([data instanceof Uint8Array ? data : new Uint8Array(data)], { type: mime });
       const url  = URL.createObjectURL(blob);
 
-      await ffmpeg.deleteFile('input.wav');
+      // Limpa FS virtual
+      try { await ffmpeg.deleteFile('input.wav'); } catch(_) {}
       try { await ffmpeg.deleteFile('out.' + ext); } catch(_) {}
 
       logLine('ok', `✓ ${outName}  (${fmtBytes(blob.size)})`);
 
+      // Cria link de download
       const a       = document.createElement('a');
       a.className   = 'dl-item';
       a.href        = url;
@@ -692,8 +824,12 @@ document.getElementById('convert-btn').addEventListener('click', async () => {
       downloads.appendChild(a);
 
     } catch (e) {
-      logLine('err', `error on ${file.name}: ${e.message || e}`);
+      logLine('err', `erro em ${file.name}: ${e.message ?? e}`);
+      logLine('err', `stack: ${e.stack ?? '(sem stack)'}`);
       setProgress(0);
+      // Tenta limpar
+      try { await ffmpeg.deleteFile('input.wav'); } catch(_) {}
+      try { await ffmpeg.deleteFile('out.' + ext); } catch(_) {}
     }
   }
 
