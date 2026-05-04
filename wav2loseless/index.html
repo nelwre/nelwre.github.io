@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAV to Video Converter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🎵 WAV to Video Converter</h1>
+            <p class="subtitle">Convert WAV files to lossless video formats for YouTube</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" accept=".wav" style="display: none;">
+                <div class="upload-content">
+                    <span class="upload-icon">📁</span>
+                    <p>Click to upload or drag & drop your WAV file</p>
+                    <small>Maximum file size: limited by your browser's memory</small>
+                </div>
+            </div>
+
+            <div id="fileInfo" class="file-info" style="display: none;">
+                <p>Selected: <strong id="fileName"></strong></p>
+                <p>Size: <strong id="fileSize"></strong></p>
+            </div>
+
+            <div class="options-section" id="optionsSection" style="display: none;">
+                <div class="option-group">
+                    <label>Output Format:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="format" value="mkv" checked> 
+                            MKV + FLAC (Best for archival)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="format" value="mov-pcm"> 
+                            MOV + PCM (NLE compatible)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="format" value="mov-wav"> 
+                            MOV + WAV (QuickTime)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label>Video Type:</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="videoType" value="black" checked> 
+                            Black Screen (Fastest)
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="videoType" value="waveform"> 
+                            Waveform Visualization
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="videoType" value="gradient"> 
+                            Gradient Background
+                        </label>
+                    </div>
+                </div>
+
+                <div class="option-group">
+                    <label for="fps">Video FPS:</label>
+                    <input type="number" id="fps" value="30" min="1" max="60">
+                </div>
+
+                <div class="option-group">
+                    <label for="resolution">Resolution:</label>
+                    <select id="resolution">
+                        <option value="1280x720">HD (1280x720)</option>
+                        <option value="1920x1080" selected>Full HD (1920x1080)</option>
+                        <option value="2560x1440">2K (2560x1440)</option>
+                        <option value="3840x2160">4K (3840x2160)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection" style="display: none;">
+                <p id="progressText">Loading FFmpeg...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressPercent">0%</p>
+            </div>
+
+            <button id="convertBtn" class="btn btn-primary" style="display: none;">
+                Start Conversion
+            </button>
+
+            <button id="downloadBtn" class="btn btn-success" style="display: none;">
+                Download Video
+            </button>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+    <script src="script.js"></script>
+</body>
+  </html>
